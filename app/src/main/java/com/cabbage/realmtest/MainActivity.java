@@ -14,6 +14,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -21,14 +22,13 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import io.realm.Realm;
-import io.realm.RealmConfiguration;
-import io.realm.RealmList;
 import io.realm.RealmQuery;
 import io.realm.RealmResults;
 
 public class MainActivity extends AppCompatActivity {
 
-    PersonAdapter mAdatper;
+    PersonAdapter mAdapter;
+    DataManager dataManager;
 
     @BindView(R.id.et_person_name) EditText etPersonName;
     @BindView(R.id.rv_persons) RecyclerView rvPersons;
@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
             realm.insert(newPerson);
             realm.commitTransaction();
 
-            mAdatper.addPerson(newPerson);
+            mAdapter.addPerson(newPerson);
         }
     }
 
@@ -59,20 +59,13 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-//        fab.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
-//            }
-//        });
+        dataManager = DataManager.getInstance();
 
         rvPersons.setHasFixedSize(false);
         rvPersons.setLayoutManager(new LinearLayoutManager(this));
         rvPersons.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST, 0, false, true));
-        mAdatper = new PersonAdapter();
-        rvPersons.setAdapter(mAdatper);
+        mAdapter = new PersonAdapter();
+        rvPersons.setAdapter(mAdapter);
 
         rvPersons.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -88,8 +81,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        RealmConfiguration realmConfig = new RealmConfiguration.Builder(this).build();
-        Realm.setDefaultConfiguration(realmConfig);
     }
 
     @Override
@@ -98,19 +89,25 @@ public class MainActivity extends AppCompatActivity {
         RealmQuery<Person> query = Realm.getDefaultInstance().where(Person.class);
         RealmResults<Person> results = query.findAll();
         for (Person result : results) {
-            mAdatper.addPerson(result);
+            mAdapter.addPerson(result);
         }
     }
 
     public static class PersonAdapter extends RecyclerView.Adapter<PersonAdapter.ViewHolder> {
 
-        private List<Person> mData = new RealmList<>();
+        private List<Person> mData = new ArrayList<>();
 
         public void addPerson(Person person) {
             if (!mData.contains(person)) {
                 mData.add(0, person);
                 notifyDataSetChanged();
             }
+        }
+
+        public void updatePersons(List<Person> personList) {
+            mData.clear();
+            mData.addAll(personList);
+            notifyDataSetChanged();
         }
 
         @Override
